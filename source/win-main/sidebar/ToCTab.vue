@@ -1,7 +1,30 @@
 <template>
   <div role="tabpanel">
     <!-- Table of Contents -->
-    <h1>{{ titleOrTocLabel }}</h1>
+    <div class="toc-header">
+      <h1>{{ titleOrTocLabel }}</h1>
+      <div
+        v-if="canSortDocument"
+        class="toc-sort-actions"
+        role="group"
+        v-bind:aria-label="trans('Sort sections')"
+      >
+        <button
+          v-bind:title="trans('Sort sections ascending')"
+          v-bind:aria-label="trans('Sort sections ascending')"
+          v-on:click="emit('sort-sections', { parentLine: null, direction: 'asc' })"
+        >
+          <cds-icon shape="sort-ascending"></cds-icon>
+        </button>
+        <button
+          v-bind:title="trans('Sort sections descending')"
+          v-bind:aria-label="trans('Sort sections descending')"
+          v-on:click="emit('sort-sections', { parentLine: null, direction: 'desc' })"
+        >
+          <cds-icon shape="sort-descending"></cds-icon>
+        </button>
+      </div>
+    </div>
     <!-- Show the ToC entries -->
     <div
       v-for="(entry, idx) of tableOfContents"
@@ -24,6 +47,25 @@
         <!-- eslint-disable-next-line vue/no-v-html NOTE we can only disable this error here since the entries are run through DOMPurify. -->
         <span v-html="tocEntryHTML[idx]"></span>
       </div>
+      <div
+        v-if="sortableChildCount(idx) > 1"
+        class="toc-sort-entry"
+      >
+        <button
+          v-bind:title="trans('Sort subsections ascending')"
+          v-bind:aria-label="trans('Sort subsections ascending')"
+          v-on:click.stop="emit('sort-sections', { parentLine: entry.line, direction: 'asc' })"
+        >
+          <cds-icon shape="sort-ascending"></cds-icon>
+        </button>
+        <button
+          v-bind:title="trans('Sort subsections descending')"
+          v-bind:aria-label="trans('Sort subsections descending')"
+          v-on:click.stop="emit('sort-sections', { parentLine: entry.line, direction: 'desc' })"
+        >
+          <cds-icon shape="sort-descending"></cds-icon>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -44,6 +86,7 @@ const configStore = useConfigStore()
 
 const emit = defineEmits<{
   (e: 'move-section', data: { from: number, to: number }): void
+  (e: 'sort-sections', data: { parentLine: number|null, direction: 'asc'|'desc' }): void
   (e: 'jump-to-line', line: number): void
 }>()
 
@@ -159,6 +202,47 @@ function updateToCHTML () {
     .catch(err => console.error(err))
 }
 
+/**
+ * Whether the document contains enough top-level sections to sort
+ */
+const canSortDocument = computed(() => {
+  const toc = tableOfContents.value
+  if (toc === undefined || toc.length < 2) {
+    return false
+  }
+  const topLevel = Math.min(...toc.map(entry => entry.level))
+  return toc.filter(entry => entry.level === topLevel).length > 1
+})
+
+/**
+ * Returns the number of sortable child sections of the ToC entry at the
+ * given index, i.e. the number of same-level sections within it.
+ *
+ * @param   {number}  idx  The index of the entry within the table of contents
+ *
+ * @return  {number}       The number of sortable child sections
+ */
+function sortableChildCount (idx: number): number {
+  const toc = tableOfContents.value
+  if (toc === undefined) {
+    return 0
+  }
+  const parent = toc[idx]
+  let endIdx = toc.length
+  for (let i = idx + 1; i < toc.length; i++) {
+    if (toc[i].level <= parent.level) {
+      endIdx = i
+      break
+    }
+  }
+  const childRange = toc.slice(idx + 1, endIdx)
+  if (childRange.length < 2) {
+    return 0
+  }
+  const childLevel = Math.min(...childRange.map(entry => entry.level))
+  return childRange.filter(entry => entry.level === childLevel).length
+}
+
 function startDragging (event: DragEvent): void {
   if (event.currentTarget === null) {
     return
@@ -224,6 +308,59 @@ function findEndOfEntry (originalToLine: number): number|undefined {
 
 <style lang="less">
 // Add a neat little effect to the table of content entries as you drag them
+.toc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toc-sort-actions {
+  display: flex;
+  flex-shrink: 0;
+
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: inherit;
+    opacity: 0.6;
+
+    &:hover { opacity: 1; }
+
+    cds-icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.toc-sort-entry {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: inherit;
+    opacity: 0.6;
+
+    &:hover { opacity: 1; }
+
+    cds-icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+.toc-entry-container:hover .toc-sort-entry {
+  display: flex;
+}
+
 .toc-entry-container {
   border-bottom: 2px solid transparent;
 
