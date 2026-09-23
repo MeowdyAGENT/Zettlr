@@ -374,6 +374,17 @@ watch(toRef(props.editorCommands, 'moveSection'), () => {
   }
 })
 
+watch(toRef(props.editorCommands, 'sortSections'), () => {
+  if (props.activeFile?.path !== props.file.path || documentTreeStore.lastLeafId !== props.leafId) {
+    return
+  }
+
+  const { parentLine, direction } = props.editorCommands.data
+  if ((typeof parentLine === 'number' || parentLine === null) && (direction === 'asc' || direction === 'desc')) {
+    currentEditor?.sortSections(parentLine, direction)
+  }
+})
+
 watch(toRef(props, 'distractionFree'), () => {
   if (currentEditor !== null && props.activeFile?.path === props.file.path && documentTreeStore.lastLeafId === props.leafId) {
     currentEditor.distractionFree = props.distractionFree
