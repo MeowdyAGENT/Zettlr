@@ -97,7 +97,7 @@ import { countField, updateWordCountEffect } from './plugins/statistics-fields'
 import { useDarkModeEditor, darkModeEffect } from './theme/dark-mode'
 import { editorMetadataFacet } from './plugins/editor-metadata'
 import { projectInfoUpdateEffect, type ProjectInfo } from './plugins/project-info-field'
-import { moveSection } from './commands/move-section'
+import { moveSection, sortSections, type SectionSortDirection } from './commands/move-section'
 import { parsePandocAttributes } from 'source/common/pandoc-util/parse-pandoc-attributes'
 import { closeSearchPanel, openSearchPanel, searchPanelOpen } from '@codemirror/search'
 import { clickListeners } from './plugins/click-listeners'
@@ -499,6 +499,18 @@ export default class MarkdownEditor extends EventEmitter {
     const toc = this._instance.state.field(tocField)
     const toLineNumber = to !== -1 ? to : this._instance.state.doc.lines
     moveSection(toc, from, toLineNumber)(this._instance)
+  }
+
+  /**
+   * Sorts the document's sections alphabetically and rearranges the document
+   * text accordingly.
+   *
+   * @param   {number|null}           parentLine  The line number of the parent heading, or null to sort top-level sections
+   * @param   {SectionSortDirection}  direction   The sort direction ('asc' for A-Z, 'desc' for Z-A)
+   */
+  sortSections (parentLine: number|null, direction: SectionSortDirection): void {
+    const toc = this._instance.state.field(tocField)
+    sortSections(toc, parentLine, direction)(this._instance)
   }
 
   /**
