@@ -67,6 +67,7 @@
             <!-- Second side: Sidebar -->
             <MainSidebar
               v-on:move-section="moveSection($event)"
+              v-on:sort-sections="sortSections($event)"
               v-on:jump-to-line="genericJtl($event)"
             ></MainSidebar>
           </template>
@@ -312,6 +313,7 @@ const pomodoro = ref<PomodoroConfig>({
 export interface EditorCommands {
   jumpToLine: boolean
   moveSection: boolean
+  sortSections: boolean
   addKeywords: boolean
   replaceSelection: boolean
   insertPandoc: boolean
@@ -323,6 +325,7 @@ export interface EditorCommands {
 const editorCommands = ref<EditorCommands>({
   jumpToLine: false,
   moveSection: false,
+  sortSections: false,
   addKeywords: false,
   replaceSelection: false,
   insertPandoc: false,
@@ -867,6 +870,11 @@ function jtl (filePath: string, lineNumber: number, newTab: boolean): void {
 function moveSection (data: { from: number, to: number }): void {
   editorCommands.value.data = { from: data.from, to: data.to }
   editorCommands.value.moveSection = !editorCommands.value.moveSection
+}
+
+function sortSections (data: { parentLine: number|null, direction: 'asc'|'desc' }): void {
+  editorCommands.value.data = data
+  editorCommands.value.sortSections = !editorCommands.value.sortSections
 }
 
 function startGlobalSearch (terms: string): void {
