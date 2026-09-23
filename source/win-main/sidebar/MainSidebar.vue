@@ -11,6 +11,7 @@
       <ToCTab
         v-show="currentTab === 'toc'"
         v-on:move-section="emit('move-section', $event)"
+        v-on:sort-sections="emit('sort-sections', $event)"
         v-on:jump-to-line="emit('jump-to-line', $event)"
       ></ToCTab>
       <ReferencesTab v-show="currentTab === 'references'"></ReferencesTab>
@@ -48,6 +49,7 @@ const configStore = useConfigStore()
 
 const emit = defineEmits<{
   (e: 'move-section', data: { from: number, to: number }): void
+  (e: 'sort-sections', data: { parentLine: number|null, direction: 'asc'|'desc' }): void
   (e: 'jump-to-line', line: number): void
 }>()
 
